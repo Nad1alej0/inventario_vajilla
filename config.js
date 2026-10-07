@@ -1,0 +1,1 @@
+window.VAJILLA_CONFIG={supabaseUrl:"",supabaseKey:""};

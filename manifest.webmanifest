@@ -1,0 +1,15 @@
+{
+  "name": "Inventario de Vajilla",
+  "short_name": "Vajilla",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f7f3ea",
+  "theme_color": "#153d32",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
