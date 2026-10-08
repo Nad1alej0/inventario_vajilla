@@ -136,7 +136,7 @@ async function loadConfig() {
   const result =
     await supabaseClient
       .from("vajilla_config")
-      .select("*")
+      .select("id, inventory_date, updated_at")
       .eq("id", 1)
       .single();
 
@@ -625,71 +625,105 @@ function fillSelectors() {
 
 
 /* =========================
-   PIN ADMINISTRACIÓN
+   ACCESO ADMINISTRACIÓN
 ========================= */
 
-function openAdminAccess() {
+function ensureAdminLoginUI() {
+  const panel = $("#pinView .panel");
+  if (!panel || $("#adminEmail")) return;
+
+  panel.innerHTML = `
+    <span class="kicker">Acceso restringido</span>
+    <h2>Administración</h2>
+    <p class="muted">Ingresá con la cuenta de Nadia o Tiara.</p>
+
+    <label>
+      Email
+      <input id="adminEmail" type="email" autocomplete="email" placeholder="tu@email.com">
+    </label>
+
+    <label>
+      Contraseña
+      <input id="adminPassword" type="password" autocomplete="current-password" placeholder="••••••••">
+    </label>
+
+    <button id="enterAdminBtn" class="primary" type="button">Ingresar</button>
+    <p id="pinMsg" class="status"></p>
+  `;
+}
+
+async function openAdminAccess() {
   if (adminUnlocked) {
     renderAdmin();
     show("adminView");
     return;
   }
 
-  $("#adminPinInput").value =
-    "";
-
-  $("#pinMsg").textContent =
-    "";
-
+  ensureAdminLoginUI();
+  $("#pinMsg").textContent = "";
   show("pinView");
 
+  const { data } = await supabaseClient.auth.getSession();
+  if (data?.session) {
+    const check = await supabaseClient
+      .from("vajilla_admins")
+      .select("user_id")
+      .eq("user_id", data.session.user.id)
+      .maybeSingle();
 
-  setTimeout(() => {
-    $("#adminPinInput").focus();
-  }, 100);
+    if (check.data) {
+      adminUnlocked = true;
+      renderAdmin();
+      show("adminView");
+      return;
+    }
+  }
+
+  setTimeout(() => $("#adminEmail")?.focus(), 100);
 }
 
+async function verifyAdminLogin() {
+  const email = $("#adminEmail")?.value.trim();
+  const password = $("#adminPassword")?.value || "";
 
-function verifyAdminPin() {
-  const entered =
-    $("#adminPinInput")
-      .value
-      .trim();
-
-
-  if (!entered) {
-    $("#pinMsg").textContent =
-      "Ingresá el PIN.";
-
+  if (!email || !password) {
+    $("#pinMsg").textContent = "Completá email y contraseña.";
     return;
   }
 
+  $("#pinMsg").textContent = "Ingresando…";
 
-  if (
-    String(entered) ===
-    String(config?.admin_pin || "")
-  ) {
-    adminUnlocked = true;
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
 
-    $("#pinMsg").textContent =
-      "";
-
-    renderAdmin();
-
-    show("adminView");
-
+  if (error) {
+    $("#pinMsg").textContent = "Email o contraseña incorrectos.";
     return;
   }
 
+  const check = await supabaseClient
+    .from("vajilla_admins")
+    .select("user_id")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
 
-  $("#pinMsg").textContent =
-    "PIN incorrecto.";
+  if (check.error || !check.data) {
+    await supabaseClient.auth.signOut();
+    $("#pinMsg").textContent = "Esta cuenta no tiene permiso de administración.";
+    return;
+  }
+
+  adminUnlocked = true;
+  $("#pinMsg").textContent = "";
+  renderAdmin();
+  show("adminView");
 }
 
-
-function closeAdmin() {
+async function closeAdmin() {
   adminUnlocked = false;
-
+  await supabaseClient.auth.signOut();
   show("homeView");
 }
 
@@ -2297,24 +2331,17 @@ document.addEventListener(
       openAdminAccess;
 
 
+    ensureAdminLoginUI();
+
     $("#enterAdminBtn").onclick =
-      verifyAdminPin;
+      verifyAdminLogin;
 
-
-    $("#adminPinInput")
-      .addEventListener(
-        "keydown",
-        e => {
-
-          if (
-            e.key ===
-            "Enter"
-          ) {
-            verifyAdminPin();
-          }
-
+    $("#adminPassword")
+      .addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+          verifyAdminLogin();
         }
-      );
+      });
 
 
     $("#logoutBtn").onclick =
