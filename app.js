@@ -1469,27 +1469,26 @@ async function saveItem() {
 
 
     if (!id) {
+      id =
+        crypto.randomUUID();
+
+
       const result =
         await supabaseClient
           .from("vajilla_items")
           .insert({
+            id,
             name,
             category_id,
             usage,
             quantity,
             description
-          })
-          .select()
-          .single();
+          });
 
 
       if (result.error) {
         throw result.error;
       }
-
-
-      id =
-        result.data.id;
 
     } else {
 
