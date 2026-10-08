@@ -85,3 +85,18 @@ using (
 -- insert into public.vajilla_admins(user_id, display_name) values
 -- ('UUID-DE-NADIA','Nadia'),
 -- ('UUID-DE-TIARA','Tiara');
+
+
+-- Permisos de API para la app web
+grant usage on schema public to anon, authenticated;
+grant select on table public.vajilla_categories to anon, authenticated;
+grant select on table public.vajilla_items to anon, authenticated;
+grant select on table public.vajilla_admins to authenticated;
+
+grant insert, update, delete on table public.vajilla_categories to authenticated;
+grant insert, update, delete on table public.vajilla_items to authenticated;
+
+-- Storage: lectura pública; escritura autenticada controlada además por RLS
+grant usage on schema storage to anon, authenticated;
+grant select on table storage.objects to anon, authenticated;
+grant insert, update, delete on table storage.objects to authenticated;
