@@ -628,7 +628,7 @@ function fillSelectors() {
    ACCESO ADMINISTRACIÓN
 ========================= */
 
-const ADMIN_LOGIN_EMAIL = "nadiallanqueleo89@gmail.com";
+const ADMIN_LOGIN_EMAIL = "nadiallanqueleo89+inventario@gmail.com";
 
 function ensureAdminLoginUI() {
   const panel = $("#pinView .panel");
