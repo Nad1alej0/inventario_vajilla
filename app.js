@@ -6,8 +6,9 @@ const BASE = [
   { name: "Cafetería", icon: "☕" },
   { name: "Cerveza", icon: "🍺" },
   { name: "Otros", icon: "📦" }
-]
-  ;let supabaseClient = null;
+];
+
+let supabaseClient = null;
 let categories = [];
 let items = [];
 let selectedFile = null;
@@ -35,7 +36,16 @@ function categoryName(item) {
   if (item.category_id) {
     return categories.find(c => c.id === item.category_id)?.name || "Otros";
   }
+
   return item.category || "Otros";
+}
+
+function categoryIcon(category) {
+  return (
+    BASE.find(b => b.name === category.name)?.icon ||
+    category.icon ||
+    "📦"
+  );
 }
 
 async function initSupabase() {
@@ -75,6 +85,7 @@ async function loadData() {
 
   renderCategories();
   fillSelectors();
+  renderCategoryManager();
 }
 
 function renderCategories() {
@@ -87,11 +98,19 @@ function renderCategories() {
     ).length;
 
     return `
-      <button class="category-card" data-cat="${esc(c.name)}">
-        <span class="cat-icon">${BASE.find(b => b.name === c.name)?.icon || c.icon || "📦"}</span>
+      <button
+        class="category-card"
+        data-cat="${esc(c.name)}"
+      >
+        <span class="cat-icon">
+          ${categoryIcon(c)}
+        </span>
+
         <b>${esc(c.name)}</b>
+
         <small>
-          ${cantidad} ${cantidad === 1 ? "artículo" : "artículos"}
+          ${cantidad}
+          ${cantidad === 1 ? "artículo" : "artículos"}
         </small>
       </button>
     `;
@@ -147,11 +166,13 @@ function itemCard(item, admin = false) {
         ${
           admin
             ? `
-              <div style="
-                display:flex;
-                gap:14px;
-                margin-top:12px;
-              ">
+              <div
+                style="
+                  display:flex;
+                  gap:14px;
+                  margin-top:12px;
+                "
+              >
 
                 <button
                   class="text-btn edit-btn"
@@ -218,7 +239,6 @@ function openCategory(name) {
   render();
 
   $$("#usageFilters .chip").forEach(btn => {
-
     btn.onclick = () => {
 
       $$("#usageFilters .chip")
@@ -228,7 +248,6 @@ function openCategory(name) {
 
       render(btn.dataset.use);
     };
-
   });
 
   show("categoryView");
@@ -240,7 +259,6 @@ function search(q) {
     .toLowerCase();
 
   if (!q) {
-
     $("#searchResultsSection")
       .classList
       .add("hidden");
@@ -272,7 +290,6 @@ function search(q) {
 }
 
 function fillSelectors() {
-
   $("#itemCategory").innerHTML =
     categories.map(c =>
       `<option value="${c.id}">
@@ -307,7 +324,6 @@ function fillSelectors() {
 }
 
 function renderAdmin() {
-
   $("#adminItems").innerHTML =
     items.length
       ? items.map(i => itemCard(i, true)).join("")
@@ -326,10 +342,276 @@ function renderAdmin() {
     btn.onclick =
       () => deleteItem(btn.dataset.id);
   });
+
+  renderCategoryManager();
 }
 
-function resetForm() {
+/* ===========================
+   GESTIÓN DE CATEGORÍAS
+=========================== */
 
+function createCategoryManager() {
+  if ($("#categoryManager")) return;
+
+  const adminItems = $("#adminItems");
+
+  if (!adminItems) return;
+
+  const box = document.createElement("section");
+
+  box.id = "categoryManager";
+
+  box.style.margin = "24px 0";
+  box.style.padding = "18px";
+  box.style.border = "1px solid #d8d2c4";
+  box.style.borderRadius = "16px";
+  box.style.background = "#fffdf8";
+
+  box.innerHTML = `
+    <div
+      style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:12px;
+        margin-bottom:15px;
+      "
+    >
+      <div>
+        <h3 style="margin:0;">
+          Gestionar categorías
+        </h3>
+
+        <small style="color:#6f7773;">
+          Podés cambiar el nombre o eliminar categorías vacías.
+        </small>
+      </div>
+    </div>
+
+    <div id="categoryManagerList"></div>
+  `;
+
+  adminItems.parentNode.insertBefore(
+    box,
+    adminItems
+  );
+}
+
+function renderCategoryManager() {
+  createCategoryManager();
+
+  const list = $("#categoryManagerList");
+
+  if (!list) return;
+
+  list.innerHTML = categories.map(category => {
+    const cantidad = items.filter(
+      item =>
+        String(item.category_id) ===
+        String(category.id)
+    ).length;
+
+    return `
+      <div
+        style="
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:12px;
+          padding:12px 0;
+          border-bottom:1px solid #ebe6dc;
+        "
+      >
+
+        <div
+          style="
+            display:flex;
+            align-items:center;
+            gap:12px;
+          "
+        >
+
+          <span
+            style="
+              font-size:1.7rem;
+              width:38px;
+              text-align:center;
+            "
+          >
+            ${categoryIcon(category)}
+          </span>
+
+          <div>
+            <b>${esc(category.name)}</b>
+
+            <small
+              style="
+                display:block;
+                color:#777;
+                margin-top:3px;
+              "
+            >
+              ${cantidad}
+              ${cantidad === 1 ? "artículo" : "artículos"}
+            </small>
+          </div>
+
+        </div>
+
+        <div
+          style="
+            display:flex;
+            gap:12px;
+            flex-wrap:wrap;
+            justify-content:flex-end;
+          "
+        >
+
+          <button
+            type="button"
+            class="text-btn edit-category-btn"
+            data-id="${category.id}"
+          >
+            Editar
+          </button>
+
+          <button
+            type="button"
+            class="text-btn delete-category-btn"
+            data-id="${category.id}"
+            style="color:#a23434;"
+          >
+            Eliminar
+          </button>
+
+        </div>
+
+      </div>
+    `;
+  }).join("");
+
+  $$(".edit-category-btn").forEach(btn => {
+    btn.onclick =
+      () => editCategory(btn.dataset.id);
+  });
+
+  $$(".delete-category-btn").forEach(btn => {
+    btn.onclick =
+      () => deleteCategory(btn.dataset.id);
+  });
+}
+
+async function editCategory(id) {
+  const category = categories.find(
+    c => String(c.id) === String(id)
+  );
+
+  if (!category) return;
+
+  const nuevoNombre = prompt(
+    "Nuevo nombre de la categoría:",
+    category.name
+  );
+
+  if (nuevoNombre === null) return;
+
+  const limpio = nuevoNombre.trim();
+
+  if (!limpio) {
+    alert("El nombre no puede quedar vacío.");
+    return;
+  }
+
+  if (
+    categories.some(
+      c =>
+        String(c.id) !== String(id) &&
+        c.name.toLowerCase() === limpio.toLowerCase()
+    )
+  ) {
+    alert("Ya existe una categoría con ese nombre.");
+    return;
+  }
+
+  const result = await supabaseClient
+    .from("vajilla_categories")
+    .update({
+      name: limpio
+    })
+    .eq("id", id);
+
+  if (result.error) {
+    alert(
+      "No se pudo editar la categoría: " +
+      result.error.message
+    );
+
+    return;
+  }
+
+  await loadData();
+  renderAdmin();
+
+  alert("Categoría actualizada correctamente.");
+}
+
+async function deleteCategory(id) {
+  const category = categories.find(
+    c => String(c.id) === String(id)
+  );
+
+  if (!category) return;
+
+  const cantidad = items.filter(
+    item =>
+      String(item.category_id) ===
+      String(id)
+  ).length;
+
+  if (cantidad > 0) {
+    alert(
+      `No se puede eliminar "${category.name}".\n\n` +
+      `Tiene ${cantidad} ${
+        cantidad === 1 ? "artículo" : "artículos"
+      }.\n\n` +
+      "Primero mové esos artículos a otra categoría o eliminálos."
+    );
+
+    return;
+  }
+
+  const ok = confirm(
+    `¿Eliminar la categoría "${category.name}"?\n\n` +
+    "Esta acción no se puede deshacer."
+  );
+
+  if (!ok) return;
+
+  const result = await supabaseClient
+    .from("vajilla_categories")
+    .delete()
+    .eq("id", id);
+
+  if (result.error) {
+    alert(
+      "No se pudo eliminar la categoría: " +
+      result.error.message
+    );
+
+    return;
+  }
+
+  await loadData();
+  renderAdmin();
+
+  alert("Categoría eliminada correctamente.");
+}
+
+/* ===========================
+   ARTÍCULOS
+=========================== */
+
+function resetForm() {
   editingId = null;
   selectedFile = null;
 
@@ -356,7 +638,6 @@ function resetForm() {
 }
 
 function previewFile(file) {
-
   if (!file) return;
 
   selectedFile = file;
@@ -364,7 +645,6 @@ function previewFile(file) {
   const reader = new FileReader();
 
   reader.onload = e => {
-
     $("#photoPreview").src =
       e.target.result;
 
@@ -385,7 +665,6 @@ async function compressImage(
   maxSize = 1000,
   quality = 0.78
 ) {
-
   const bitmap =
     await createImageBitmap(file);
 
@@ -421,10 +700,8 @@ async function compressImage(
 
   return await new Promise(
     (resolve, reject) => {
-
       canvas.toBlob(
         blob => {
-
           if (blob) {
             resolve(blob);
           } else {
@@ -434,12 +711,10 @@ async function compressImage(
               )
             );
           }
-
         },
         "image/webp",
         quality
       );
-
     }
   );
 }
@@ -448,7 +723,6 @@ async function uploadPhoto(
   file,
   itemId
 ) {
-
   const blob =
     await compressImage(file);
 
@@ -482,7 +756,6 @@ async function uploadPhoto(
 }
 
 async function saveItem() {
-
   const name =
     $("#itemName")
       .value
@@ -507,7 +780,6 @@ async function saveItem() {
       .trim();
 
   if (!name) {
-
     $("#saveMsg").textContent =
       "Falta el nombre del artículo.";
 
@@ -522,11 +794,9 @@ async function saveItem() {
     "Guardando…";
 
   try {
-
     let id = editingId;
 
     if (!id) {
-
       const result =
         await supabaseClient
           .from("vajilla_items")
@@ -547,7 +817,6 @@ async function saveItem() {
       id = result.data.id;
 
     } else {
-
       const result =
         await supabaseClient
           .from("vajilla_items")
@@ -565,11 +834,9 @@ async function saveItem() {
       if (result.error) {
         throw result.error;
       }
-
     }
 
     if (selectedFile) {
-
       $("#saveMsg").textContent =
         "Subiendo foto…";
 
@@ -592,7 +859,6 @@ async function saveItem() {
       if (photoResult.error) {
         throw photoResult.error;
       }
-
     }
 
     await loadData();
@@ -606,16 +872,13 @@ async function saveItem() {
       "Artículo guardado correctamente";
 
     setTimeout(() => {
-
       $("#saveItemBtn").disabled =
         false;
 
       show("adminView");
-
     }, 1200);
 
   } catch (error) {
-
     console.error(error);
 
     $("#saveItemBtn").disabled =
@@ -631,7 +894,6 @@ async function saveItem() {
 }
 
 function editItem(id) {
-
   const item =
     items.find(
       i =>
@@ -665,7 +927,6 @@ function editItem(id) {
   $("#saveMsg").textContent = "";
 
   if (item.photo_url) {
-
     $("#photoPreview").src =
       item.photo_url;
 
@@ -678,7 +939,6 @@ function editItem(id) {
       .add("hidden");
 
   } else {
-
     $("#photoPreview")
       .classList
       .add("hidden");
@@ -692,7 +952,6 @@ function editItem(id) {
 }
 
 async function deleteItem(id) {
-
   const item =
     items.find(
       i =>
@@ -703,7 +962,8 @@ async function deleteItem(id) {
   if (!item) return;
 
   const ok = confirm(
-    `¿Eliminar "${item.name}"?\n\nEsta acción no se puede deshacer.`
+    `¿Eliminar "${item.name}"?\n\n` +
+    "Esta acción no se puede deshacer."
   );
 
   if (!ok) return;
@@ -715,7 +975,6 @@ async function deleteItem(id) {
       .eq("id", id);
 
   if (result.error) {
-
     alert(
       "No se pudo eliminar: " +
       result.error.message
@@ -725,16 +984,14 @@ async function deleteItem(id) {
   }
 
   await loadData();
-
   renderAdmin();
 
   alert(
-    "Artículo eliminado correctamente"
+    "Artículo eliminado correctamente."
   );
 }
 
 async function saveCategory() {
-
   const name =
     $("#newCategoryName")
       .value
@@ -744,7 +1001,6 @@ async function saveCategory() {
     $("#newCategoryIcon").value;
 
   if (!name) {
-
     $("#categoryMsg").textContent =
       "Escribí un nombre.";
 
@@ -764,7 +1020,6 @@ async function saveCategory() {
       .single();
 
   if (result.error) {
-
     $("#categoryMsg").textContent =
       result.error.message;
 
@@ -783,12 +1038,11 @@ async function saveCategory() {
   $("#newCategoryName").value = "";
 }
 
-/* ==============================
+/* ===========================
    INFORMES
-================================ */
+=========================== */
 
 function prepareReportControls() {
-
   const panel =
     $("#reportsView .panel");
 
@@ -861,7 +1115,6 @@ function prepareReportControls() {
       <div id="manualReportItems"></div>
 
     </div>
-
   `;
 
   const printButton =
@@ -874,7 +1127,6 @@ function prepareReportControls() {
 
   $("#reportMode").onchange =
     () => {
-
       const manual =
         $("#reportMode").value ===
         "manual";
@@ -903,13 +1155,11 @@ function prepareReportControls() {
         );
 
       renderManualReportList();
-
       report();
     };
 
   $("#selectAllReport").onclick =
     () => {
-
       $$(".report-check")
         .forEach(c => {
           c.checked = true;
@@ -920,7 +1170,6 @@ function prepareReportControls() {
 
   $("#clearReportSelection").onclick =
     () => {
-
       $$(".report-check")
         .forEach(c => {
           c.checked = false;
@@ -931,7 +1180,6 @@ function prepareReportControls() {
 }
 
 function renderManualReportList() {
-
   const box =
     $("#manualReportItems");
 
@@ -988,15 +1236,12 @@ function renderManualReportList() {
 
   $$(".report-check")
     .forEach(check => {
-
       check.onchange =
         report;
-
     });
 }
 
 function report() {
-
   const mode =
     $("#reportMode")
       ? $("#reportMode").value
@@ -1008,7 +1253,6 @@ function report() {
     "Inventario de Vajilla";
 
   if (mode === "manual") {
-
     const selectedIds =
       $$(".report-check:checked")
         .map(c => c.value);
@@ -1024,7 +1268,6 @@ function report() {
       "Inventario de Vajilla — Selección de artículos";
 
   } else {
-
     const category =
       $("#reportCategory").value;
 
@@ -1191,22 +1434,23 @@ function report() {
         font-size:1.1rem;
       "
     >
-
       <b>
         Total de unidades:
         ${total}
       </b>
-
     </div>
   `;
 }
+
+/* ===========================
+   INICIO
+=========================== */
 
 document.addEventListener(
   "DOMContentLoaded",
   async () => {
 
     try {
-
       const ok =
         await initSupabase();
 
@@ -1215,7 +1459,6 @@ document.addEventListener(
       await loadData();
 
     } catch (error) {
-
       console.error(error);
 
       alert(
@@ -1233,9 +1476,7 @@ document.addEventListener(
 
     $("#clearSearch").onclick =
       () => {
-
         $("#searchInput").value = "";
-
         search("");
       };
 
@@ -1243,9 +1484,7 @@ document.addEventListener(
 
     $("#adminBtn").onclick =
       () => {
-
         renderAdmin();
-
         show("adminView");
       };
 
@@ -1254,18 +1493,14 @@ document.addEventListener(
 
     $("#newItemBtn").onclick =
       () => {
-
         resetForm();
-
         fillSelectors();
-
         show("itemFormView");
       };
 
     $("#newCategoryBtn").onclick =
     $("#inlineNewCategory").onclick =
       () => {
-
         $("#categoryMsg").textContent =
           "";
 
@@ -1276,7 +1511,6 @@ document.addEventListener(
 
     $("#closeCategoryModal").onclick =
       () => {
-
         $("#categoryModal")
           .classList
           .add("hidden");
@@ -1303,11 +1537,8 @@ document.addEventListener(
 
     $("#reportsBtn").onclick =
       () => {
-
         renderManualReportList();
-
         report();
-
         show("reportsView");
       };
 
@@ -1322,16 +1553,13 @@ document.addEventListener(
 
     $$("[data-back]")
       .forEach(btn => {
-
         btn.onclick =
           () => show("homeView");
-
       });
 
     if (
       "serviceWorker" in navigator
     ) {
-
       navigator
         .serviceWorker
         .register("sw.js")
