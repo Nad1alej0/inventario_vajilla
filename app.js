@@ -628,23 +628,27 @@ function fillSelectors() {
    ACCESO ADMINISTRACIÓN
 ========================= */
 
+const ADMIN_LOGIN_EMAIL = "nadiallanqueleo89@gmail.com";
+
 function ensureAdminLoginUI() {
   const panel = $("#pinView .panel");
-  if (!panel || $("#adminEmail")) return;
+  if (!panel || $("#adminPinInput")) return;
 
   panel.innerHTML = `
     <span class="kicker">Acceso restringido</span>
     <h2>Administración</h2>
-    <p class="muted">Ingresá con la cuenta de Nadia o Tiara.</p>
+    <p class="muted">Ingresá el PIN de administración.</p>
 
     <label>
-      Email
-      <input id="adminEmail" type="email" autocomplete="email" placeholder="tu@email.com">
-    </label>
-
-    <label>
-      Contraseña
-      <input id="adminPassword" type="password" autocomplete="current-password" placeholder="••••••••">
+      PIN
+      <input
+        id="adminPinInput"
+        type="password"
+        inputmode="numeric"
+        maxlength="12"
+        autocomplete="current-password"
+        placeholder="••••"
+      >
     </label>
 
     <button id="enterAdminBtn" class="primary" type="button">Ingresar</button>
@@ -679,27 +683,26 @@ async function openAdminAccess() {
     }
   }
 
-  setTimeout(() => $("#adminEmail")?.focus(), 100);
+  setTimeout(() => $("#adminPinInput")?.focus(), 100);
 }
 
-async function verifyAdminLogin() {
-  const email = $("#adminEmail")?.value.trim();
-  const password = $("#adminPassword")?.value || "";
+async function verifyAdminPin() {
+  const pin = $("#adminPinInput")?.value.trim() || "";
 
-  if (!email || !password) {
-    $("#pinMsg").textContent = "Completá email y contraseña.";
+  if (!pin) {
+    $("#pinMsg").textContent = "Ingresá el PIN.";
     return;
   }
 
   $("#pinMsg").textContent = "Ingresando…";
 
   const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
+    email: ADMIN_LOGIN_EMAIL,
+    password: pin
   });
 
   if (error) {
-    $("#pinMsg").textContent = "Email o contraseña incorrectos.";
+    $("#pinMsg").textContent = "PIN incorrecto.";
     return;
   }
 
@@ -2334,12 +2337,12 @@ document.addEventListener(
     ensureAdminLoginUI();
 
     $("#enterAdminBtn").onclick =
-      verifyAdminLogin;
+      verifyAdminPin;
 
-    $("#adminPassword")
+    $("#adminPinInput")
       .addEventListener("keydown", e => {
         if (e.key === "Enter") {
-          verifyAdminLogin();
+          verifyAdminPin();
         }
       });
 
