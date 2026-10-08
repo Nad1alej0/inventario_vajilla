@@ -358,12 +358,26 @@ function report(){
 
 
 async function handleRecoveryMode(){
+  const url=new URL(window.location.href);
+  const code=url.searchParams.get("code");
+  const type=url.searchParams.get("type");
   const hash=window.location.hash||"";
-  const search=window.location.search||"";
-  const isRecovery=hash.includes("type=recovery") || search.includes("type=recovery");
+  const isRecovery=Boolean(code) || type==="recovery" || hash.includes("type=recovery");
+
   if(!isRecovery) return false;
 
+  try{
+    if(code){
+      const {error}=await supabaseClient.auth.exchangeCodeForSession(code);
+      if(error) throw error;
+    }
+  }catch(e){
+    console.error(e);
+    $("#recoveryMsg").textContent="El enlace de recuperación no pudo validarse. Pedí uno nuevo.";
+  }
+
   show("recoveryView");
+
   $("#saveNewPasswordBtn").onclick=async()=>{
     const p1=$("#newPassword").value;
     const p2=$("#confirmPassword").value;
@@ -378,9 +392,12 @@ async function handleRecoveryMode(){
       return;
     }
 
+    $("#saveNewPasswordBtn").disabled=true;
     $("#recoveryMsg").textContent="Guardando…";
+
     const {error}=await supabaseClient.auth.updateUser({password:p1});
     if(error){
+      $("#saveNewPasswordBtn").disabled=false;
       $("#recoveryMsg").style.color="#a23434";
       $("#recoveryMsg").textContent="No se pudo cambiar la contraseña. "+error.message;
       return;
@@ -389,10 +406,16 @@ async function handleRecoveryMode(){
     $("#recoveryMsg").style.color="#176b4a";
     $("#recoveryMsg").textContent="Contraseña actualizada correctamente.";
     history.replaceState({},document.title,window.location.pathname);
-    setTimeout(()=>show("adminLoginView"),1200);
+    setTimeout(async()=>{
+      await supabaseClient.auth.signOut();
+      show("adminLoginView");
+      $("#loginMsg").textContent="Ya podés ingresar con tu nueva contraseña.";
+      $("#saveNewPasswordBtn").disabled=false;
+    },1200);
   };
   return true;
 }
+
 
 document.addEventListener("DOMContentLoaded",async()=>{
   try{
