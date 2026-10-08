@@ -100,3 +100,34 @@ grant insert, update, delete on table public.vajilla_items to authenticated;
 grant usage on schema storage to anon, authenticated;
 grant select on table storage.objects to anon, authenticated;
 grant insert, update, delete on table storage.objects to authenticated;
+
+
+-- Configuración visible de inventario (sin exponer secretos)
+alter table public.vajilla_config enable row level security;
+
+drop policy if exists "public read vajilla config" on public.vajilla_config;
+create policy "public read vajilla config"
+on public.vajilla_config
+for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "admins update vajilla config" on public.vajilla_config;
+create policy "admins update vajilla config"
+on public.vajilla_config
+for update
+to authenticated
+using (
+  exists (
+    select 1
+    from public.vajilla_admins a
+    where a.user_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.vajilla_admins a
+    where a.user_id = auth.uid()
+  )
+);
