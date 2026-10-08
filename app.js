@@ -356,10 +356,50 @@ function report(){
   </tr>`).join("")}</table>`;
 }
 
+
+async function handleRecoveryMode(){
+  const hash=window.location.hash||"";
+  const search=window.location.search||"";
+  const isRecovery=hash.includes("type=recovery") || search.includes("type=recovery");
+  if(!isRecovery) return false;
+
+  show("recoveryView");
+  $("#saveNewPasswordBtn").onclick=async()=>{
+    const p1=$("#newPassword").value;
+    const p2=$("#confirmPassword").value;
+    $("#recoveryMsg").style.color="#6f7773";
+
+    if(!p1 || p1.length<6){
+      $("#recoveryMsg").textContent="La contraseña debe tener al menos 6 caracteres.";
+      return;
+    }
+    if(p1!==p2){
+      $("#recoveryMsg").textContent="Las contraseñas no coinciden.";
+      return;
+    }
+
+    $("#recoveryMsg").textContent="Guardando…";
+    const {error}=await supabaseClient.auth.updateUser({password:p1});
+    if(error){
+      $("#recoveryMsg").style.color="#a23434";
+      $("#recoveryMsg").textContent="No se pudo cambiar la contraseña. "+error.message;
+      return;
+    }
+
+    $("#recoveryMsg").style.color="#176b4a";
+    $("#recoveryMsg").textContent="Contraseña actualizada correctamente.";
+    history.replaceState({},document.title,window.location.pathname);
+    setTimeout(()=>show("adminLoginView"),1200);
+  };
+  return true;
+}
+
 document.addEventListener("DOMContentLoaded",async()=>{
   try{
     if(!await initSupabase()) return;
+    const recoveryMode=await handleRecoveryMode();
     await loadData();
+    if(recoveryMode) return;
   }catch(e){
     console.error(e);
     alert("No se pudo conectar con Supabase. "+(e.message||""));
