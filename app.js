@@ -62,6 +62,11 @@ function categoryName(item) {
 }
 
 
+function productName(item) {
+  return (item.product || item.name || "Sin producto").trim();
+}
+
+
 function categoryIcon(category) {
   return (
     BASE.find(
@@ -456,6 +461,10 @@ function itemCard(
             ${esc(categoryName(item))}
           </span>
 
+          <span class="tag">
+            ${esc(productName(item))}
+          </span>
+
           ${
             item.usage
               ? `
@@ -540,6 +549,7 @@ function search(q) {
     items.filter(i =>
       [
         i.name,
+        i.product,
         categoryName(i),
         i.usage,
         i.description
@@ -1204,6 +1214,9 @@ function resetForm() {
     "Agregar artículo";
 
 
+  $("#itemProduct").value =
+    "";
+
   $("#itemName").value =
     "";
 
@@ -1413,6 +1426,12 @@ async function uploadPhoto(
 ========================= */
 
 async function saveItem() {
+  const product =
+    $("#itemProduct")
+      .value
+      .trim();
+
+
   const name =
     $("#itemName")
       .value
@@ -1443,9 +1462,17 @@ async function saveItem() {
       .trim();
 
 
+  if (!product) {
+    $("#saveMsg").textContent =
+      "Falta el producto.";
+
+    return;
+  }
+
+
   if (!name) {
     $("#saveMsg").textContent =
-      "Falta el nombre del artículo.";
+      "Falta el modelo.";
 
     return;
   }
@@ -1478,6 +1505,7 @@ async function saveItem() {
           .from("vajilla_items")
           .insert({
             id,
+            product,
             name,
             category_id,
             usage,
@@ -1496,6 +1524,7 @@ async function saveItem() {
         await supabaseClient
           .from("vajilla_items")
           .update({
+            product,
             name,
             category_id,
             usage,
@@ -1625,6 +1654,9 @@ function editItem(id) {
   $("#formTitle").textContent =
     "Editar artículo";
 
+
+  $("#itemProduct").value =
+    item.product || item.name || "";
 
   $("#itemName").value =
     item.name || "";
