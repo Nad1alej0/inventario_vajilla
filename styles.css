@@ -1769,7 +1769,11 @@ textarea {
   background: var(--cream);
 
   animation:
-    appSplashFade 1.6s ease forwards;
+    appSplashFade 2.1s ease forwards;
+}
+
+.app-splash-content {
+  text-align: center;
 }
 
 .app-splash-icon {
@@ -1777,9 +1781,45 @@ textarea {
   height: auto;
 
   display: block;
+  margin: 0 auto;
 
   animation:
-    appSplashIcon 1.35s ease both;
+    appSplashIcon 1.55s ease both;
+}
+
+.app-splash-text {
+  margin-top: 18px;
+
+  opacity: 0;
+
+  animation:
+    appSplashText 1.15s ease 0.55s both;
+}
+
+.app-splash-title {
+  color: var(--green);
+
+  font-size:
+    clamp(
+      1.35rem,
+      5vw,
+      1.95rem
+    );
+
+  font-weight: 700;
+}
+
+.app-splash-subtitle {
+  margin-top: 5px;
+
+  color: var(--gold);
+
+  font-size: 0.82rem;
+  font-weight: 800;
+
+  letter-spacing: 0.12em;
+
+  text-transform: uppercase;
 }
 
 @keyframes appSplashIcon {
@@ -1793,7 +1833,7 @@ textarea {
     transform: scale(1);
   }
 
-  72% {
+  76% {
     opacity: 1;
     transform: scale(1);
   }
@@ -1804,9 +1844,27 @@ textarea {
   }
 }
 
+@keyframes appSplashText {
+  0% {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  28%,
+  78% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
 @keyframes appSplashFade {
   0%,
-  72% {
+  76% {
     opacity: 1;
     visibility: visible;
   }
@@ -1820,7 +1878,9 @@ textarea {
 
 @media (prefers-reduced-motion: reduce) {
   .app-splash,
-  .app-splash-icon {
+  .app-splash-icon,
+  .app-splash-text {
     animation-duration: 0.25s;
+    animation-delay: 0s;
   }
 }
