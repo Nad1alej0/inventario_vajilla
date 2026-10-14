@@ -1709,3 +1709,45 @@ textarea {
   }
 
 }
+
+
+/* =========================
+   PRODUCTOS AGRUPADOS
+========================= */
+
+.product-card {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fffefa;
+  padding: 18px;
+  text-align: left;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 16px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.product-card h3 {
+  margin: 4px 0 0;
+  color: var(--green);
+}
+
+.product-card > .muted {
+  grid-column: 1 / -1;
+}
+
+.product-totals {
+  text-align: right;
+  color: var(--green);
+}
+
+.product-totals b {
+  display: block;
+  font-size: 1.7rem;
+}
+
+.product-totals small {
+  color: var(--muted);
+}
