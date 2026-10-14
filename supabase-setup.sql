@@ -131,3 +131,8 @@ with check (
     where a.user_id = auth.uid()
   )
 );
+
+
+-- Producto agrupa los distintos modelos dentro de cada categoría
+alter table public.vajilla_items
+add column if not exists product text;
