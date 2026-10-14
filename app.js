@@ -275,12 +275,22 @@ function renderCategories() {
   $("#categoryGrid").innerHTML =
     categories.map(c => {
 
-      const cantidad =
+      const catItems =
         items.filter(
           i =>
             String(i.category_id) ===
             String(c.id)
-        ).length;
+        );
+
+      const models =
+        catItems.length;
+
+      const units =
+        catItems.reduce(
+          (sum, item) =>
+            sum + Number(item.quantity || 0),
+          0
+        );
 
       return `
         <button
@@ -297,12 +307,9 @@ function renderCategories() {
           </b>
 
           <small>
-            ${cantidad}
-            ${
-              cantidad === 1
-                ? "artículo"
-                : "artículos"
-            }
+            ${models}
+            ${models === 1 ? "modelo" : "modelos"}
+            · ${units} unidades
           </small>
 
         </button>
@@ -334,85 +341,163 @@ function openCategory(name) {
         name
     );
 
+  const grouped = {};
 
-  const usages = [
-    ...new Set(
-      list
-        .map(i => i.usage)
-        .filter(Boolean)
-    )
-  ];
+  list.forEach(item => {
+    const product =
+      productName(item);
 
+    if (!grouped[product]) {
+      grouped[product] = [];
+    }
 
-  $("#usageFilters").innerHTML =
-    `
-      <button
-        class="chip active"
-        data-use=""
-      >
-        Todos
-      </button>
-    ` +
-    usages.map(u => `
-      <button
-        class="chip"
-        data-use="${esc(u)}"
-      >
-        ${esc(u)}
-      </button>
-    `).join("");
+    grouped[product].push(item);
+  });
 
+  $("#usageFilters").innerHTML = "";
 
-  function render(use = "") {
-    const filtered =
-      list.filter(
-        i =>
-          !use ||
-          i.usage === use
+  const products =
+    Object.entries(grouped)
+      .sort((a, b) =>
+        a[0].localeCompare(
+          b[0],
+          "es",
+          { sensitivity: "base" }
+        )
       );
 
+  $("#categoryItems").innerHTML =
+    products.length
+      ? products.map(([product, productItems]) => {
 
-    $("#categoryItems").innerHTML =
-      filtered
-        .map(i => itemCard(i))
-        .join("");
+          const units =
+            productItems.reduce(
+              (sum, item) =>
+                sum + Number(item.quantity || 0),
+              0
+            );
 
+          const models =
+            productItems.length;
 
-    $("#categoryEmpty")
-      .classList
-      .toggle(
-        "hidden",
-        filtered.length > 0
-      );
-  }
+          return `
+            <button
+              class="product-card"
+              data-product="${esc(product)}"
+            >
+              <div>
+                <span class="kicker">
+                  Producto
+                </span>
 
+                <h3>
+                  ${esc(product)}
+                </h3>
+              </div>
 
-  render();
+              <div class="product-totals">
+                <b>
+                  ${units}
+                </b>
 
+                <small>
+                  unidades
+                </small>
+              </div>
 
-  $$("#usageFilters .chip")
+              <small class="muted">
+                ${models}
+                ${models === 1 ? "modelo" : "modelos"}
+              </small>
+            </button>
+          `;
+        }).join("")
+      : "";
+
+  $("#categoryEmpty")
+    .classList
+    .toggle(
+      "hidden",
+      products.length > 0
+    );
+
+  $$("#categoryItems .product-card")
     .forEach(btn => {
 
-      btn.onclick = () => {
-
-        $$("#usageFilters .chip")
-          .forEach(x =>
-            x.classList.remove(
-              "active"
-            )
+      btn.onclick =
+        () =>
+          openProduct(
+            name,
+            btn.dataset.product
           );
-
-        btn.classList.add(
-          "active"
-        );
-
-        render(
-          btn.dataset.use
-        );
-      };
 
     });
 
+  const back =
+    $("#categoryView [data-back]");
+
+  if (back) {
+    back.onclick =
+      () =>
+        show("homeView");
+  }
+
+  show("categoryView");
+}
+
+
+function openProduct(
+  category,
+  product
+) {
+  $("#categoryTitle").textContent =
+    product;
+
+  const list =
+    items.filter(
+      i =>
+        categoryName(i) ===
+          category &&
+        productName(i) ===
+          product
+    );
+
+  const total =
+    list.reduce(
+      (sum, item) =>
+        sum +
+        Number(item.quantity || 0),
+      0
+    );
+
+  $("#usageFilters").innerHTML = `
+    <span class="chip active">
+      ${list.length}
+      ${list.length === 1 ? "modelo" : "modelos"}
+      · ${total} unidades
+    </span>
+  `;
+
+  $("#categoryItems").innerHTML =
+    list
+      .map(i => itemCard(i))
+      .join("");
+
+  $("#categoryEmpty")
+    .classList
+    .toggle(
+      "hidden",
+      list.length > 0
+    );
+
+  const back =
+    $("#categoryView [data-back]");
+
+  if (back) {
+    back.onclick =
+      () =>
+        openCategory(category);
+  }
 
   show("categoryView");
 }
