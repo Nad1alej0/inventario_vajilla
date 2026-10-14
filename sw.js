@@ -1,5 +1,5 @@
-const C="vajilla-v4";
-const A=["./","index.html","styles.css","app.js?v=4","config.js?v=4","manifest.webmanifest","icon.svg"];
+const C="vajilla-v5";
+const A=["./","index.html","styles.css?v=10","app.js?v=6","config.js?v=4","manifest.webmanifest","icon.png"];
 self.addEventListener("install",e=>{
   self.skipWaiting();
   e.waitUntil(caches.open(C).then(c=>c.addAll(A)));
