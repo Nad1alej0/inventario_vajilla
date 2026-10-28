@@ -2606,3 +2606,283 @@ document.addEventListener(
 
   }
 );
+/* DIBUJOS NUEVOS PARA LAS CATEGORÍAS */
+
+let categoriaEnEdicion = null;
+
+const dibujoSVG = contenido => `
+  <svg xmlns="http://www.w3.org/2000/svg"
+       viewBox="0 0 64 64"
+       width="32" height="32"
+       aria-hidden="true"
+       style="vertical-align:middle;max-width:100%">
+    ${contenido}
+  </svg>
+`;
+
+const dibujosCategorias = {
+  pinta: dibujoSVG(`
+    <path d="M17 13h30l-5 43H22z"
+          fill="#d9eff0" stroke="#4d7776" stroke-width="2"/>
+    <path d="M21 26h22l-3 27H24z" fill="#e6ad38"/>
+    <path d="M18 15c-4-8 5-13 11-8
+             4-6 15-4 15 2
+             7-1 9 8 2 11H20z"
+          fill="#fff7df" stroke="#cbbf98" stroke-width="2"/>
+    <path d="m26 29 2 19"
+          stroke="#fff3bf" stroke-width="3"/>
+  `),
+
+  pinzas: dibujoSVG(`
+    <path d="M29 10c-6-7-15-1-12 7
+             l11 23-8 12 6 4 10-16
+             -13-25c-1-3 2-5 4-2
+             l19 27-2 16 8 1 1-20z"
+          fill="#a9bfc0" stroke="#49696b" stroke-width="2"/>
+    <path d="m21 49 7 5M45 49h7"
+          stroke="#d6a64b" stroke-width="5"/>
+  `),
+
+  cazuela: dibujoSVG(`
+    <path d="M14 29H7v10h10m33-10h7v10H47"
+          fill="none" stroke="#9e5739"
+          stroke-width="5" stroke-linejoin="round"/>
+    <path d="M13 27h38l-4 23
+             c-7 7-23 7-30 0z"
+          fill="#c8794f" stroke="#8b4d35" stroke-width="2"/>
+    <ellipse cx="32" cy="27" rx="19" ry="7"
+             fill="#e6aa70" stroke="#8b4d35" stroke-width="2"/>
+    <ellipse cx="32" cy="28" rx="14" ry="4" fill="#80523d"/>
+    <path d="M24 19c-5-6 4-7 0-13
+             m14 13c-5-6 4-7 0-13"
+          stroke="#a1b7b2" stroke-width="2" fill="none"/>
+  `),
+
+  termo: dibujoSVG(`
+    <path d="M25 7h16v10H25z"
+          fill="#d4ad5d" stroke="#6e674a" stroke-width="2"/>
+    <path d="M23 18h20l3 7v29
+             c0 5-26 5-26 0V25z"
+          fill="#6c8a72" stroke="#35574b" stroke-width="2"/>
+    <path d="M24 21h18v6H24zM21 48h24v7H21z"
+          fill="#c5d4ca"/>
+    <path d="M45 27h8v16h-8"
+          fill="none" stroke="#35574b"
+          stroke-width="4" stroke-linejoin="round"/>
+    <path d="M26 31v12" stroke="#b3ccaf" stroke-width="3"/>
+  `)
+};
+
+/* Respeta el dibujo elegido, también en categorías existentes. */
+
+categoryIcon = function (categoria) {
+  const icono =
+    categoria.icon ||
+    BASE.find(base => base.name === categoria.name)?.icon ||
+    "📦";
+
+  return dibujosCategorias[icono] || esc(icono);
+};
+
+function actualizarSeleccionDibujo() {
+  const selector = document.querySelector("#newCategoryIcon");
+
+  document.querySelectorAll("#selectorDibujos button").forEach(boton => {
+    const elegido = boton.dataset.icono === selector.value;
+
+    boton.setAttribute("aria-pressed", String(elegido));
+    boton.style.borderColor = elegido ? "#b28b36" : "#d9e2dc";
+    boton.style.background = elegido ? "#f7efd9" : "#fffdf8";
+  });
+}
+
+function prepararSelectorDibujos() {
+  const selector = document.querySelector("#newCategoryIcon");
+
+  if (!selector || document.querySelector("#selectorDibujos")) return;
+
+  [
+    ["pinta", "Vaso de cerveza"],
+    ["pinzas", "Pinzas"],
+    ["cazuela", "Cazuela"],
+    ["termo", "Termo"]
+  ].forEach(([valor, nombre]) => {
+    selector.add(new Option(nombre, valor));
+  });
+
+  selector.hidden = true;
+
+  const panel = document.createElement("div");
+
+  panel.id = "selectorDibujos";
+  panel.setAttribute("role", "group");
+  panel.setAttribute("aria-label", "Elegir dibujo de categoría");
+
+  panel.style.cssText = `
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(88px,1fr));
+    gap:8px;
+    margin:8px 0 18px;
+    max-height:42vh;
+    overflow-y:auto;
+    padding:3px;
+  `;
+
+  Array.from(selector.options).forEach(opcion => {
+    const boton = document.createElement("button");
+
+    boton.type = "button";
+    boton.dataset.icono = opcion.value;
+
+    boton.style.cssText = `
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:5px;
+      min-height:76px;
+      border:2px solid;
+      border-radius:12px;
+      padding:8px;
+      color:#153d32;
+      cursor:pointer;
+      font-size:12px;
+    `;
+
+    const dibujo = document.createElement("span");
+    dibujo.style.cssText = "font-size:28px;line-height:34px";
+    dibujo.innerHTML =
+      dibujosCategorias[opcion.value] || esc(opcion.value);
+
+    const nombre = document.createElement("span");
+    nombre.textContent =
+      opcion.textContent.replace(opcion.value, "").trim() ||
+      opcion.textContent;
+
+    boton.append(dibujo, nombre);
+
+    boton.onclick = () => {
+      selector.value = opcion.value;
+      actualizarSeleccionDibujo();
+    };
+
+    panel.append(boton);
+  });
+
+  selector.closest("label").after(panel);
+  actualizarSeleccionDibujo();
+}
+
+function abrirFormularioCategoria(categoria = null) {
+  prepararSelectorDibujos();
+
+  categoriaEnEdicion = categoria ? categoria.id : null;
+
+  document.querySelector("#newCategoryName").value =
+    categoria ? categoria.name : "";
+
+  document.querySelector("#newCategoryIcon").value =
+    categoria
+      ? categoria.icon ||
+        BASE.find(base => base.name === categoria.name)?.icon ||
+        "📦"
+      : "📦";
+
+  document.querySelector("#categoryModal h3").textContent =
+    categoria ? "Editar categoría" : "Nueva categoría";
+
+  document.querySelector("#saveCategoryBtn").textContent =
+    categoria ? "Guardar cambios" : "Crear categoría";
+
+  document.querySelector("#categoryMsg").textContent = "";
+
+  actualizarSeleccionDibujo();
+
+  document.querySelector("#categoryModal").classList.remove("hidden");
+}
+
+editCategory = async function (id) {
+  const categoria = categories.find(
+    elemento => String(elemento.id) === String(id)
+  );
+
+  if (categoria) abrirFormularioCategoria(categoria);
+};
+
+saveCategory = async function () {
+  const nombre = document.querySelector("#newCategoryName").value.trim();
+  const icono = document.querySelector("#newCategoryIcon").value;
+  const mensaje = document.querySelector("#categoryMsg");
+  const boton = document.querySelector("#saveCategoryBtn");
+
+  if (!nombre) {
+    mensaje.textContent = "Escribí un nombre.";
+    return;
+  }
+
+  const repetida = categories.some(categoria =>
+    String(categoria.id) !== String(categoriaEnEdicion) &&
+    categoria.name.toLowerCase() === nombre.toLowerCase()
+  );
+
+  if (repetida) {
+    mensaje.textContent = "Ya existe una categoría con ese nombre.";
+    return;
+  }
+
+  boton.disabled = true;
+  mensaje.textContent = "Guardando…";
+
+  try {
+    const tabla = supabaseClient.from("vajilla_categories");
+
+    const resultado = categoriaEnEdicion !== null
+      ? await tabla
+          .update({ name: nombre, icon: icono })
+          .eq("id", categoriaEnEdicion)
+          .select()
+          .single()
+      : await tabla
+          .insert({
+            name: nombre,
+            icon: icono,
+            sort_order: categories.length + 1
+          })
+          .select()
+          .single();
+
+    if (resultado.error) throw resultado.error;
+
+    await touchUpdatedAt();
+    await loadData();
+    renderAdmin();
+
+    document.querySelector("#categoryModal").classList.add("hidden");
+    mensaje.textContent = "";
+    categoriaEnEdicion = null;
+
+    alert("Categoría guardada correctamente.");
+  } catch (error) {
+    mensaje.textContent = "No se pudo guardar. " + error.message;
+  } finally {
+    boton.disabled = false;
+  }
+};
+
+/*
+  Se prepara el selector al abrir el formulario.
+  Funciona aunque la app todavía esté cargando los datos.
+*/
+
+document.addEventListener("click", evento => {
+  const boton = evento.target.closest(
+    "#newCategoryBtn, #inlineNewCategory"
+  );
+
+  if (!boton) return;
+
+  evento.preventDefault();
+  evento.stopImmediatePropagation();
+
+  abrirFormularioCategoria();
+}, true);
